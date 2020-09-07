@@ -11,6 +11,7 @@ from jose import JWTError,jwt
 
 import models,schemas
 from database import engine,SessionLocal
+import crud
 
 SECRET_KEY = "8ee7b057761c29f8ca0a336f850aa73abf9eeb81c6a5b015c893af74d7e6a948"
 ALGORITHM = "HS256"
