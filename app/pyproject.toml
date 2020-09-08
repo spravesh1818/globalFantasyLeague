@@ -8,6 +8,8 @@ authors = ["Pravesh Chapgain<spravesh1818@gmail.com>"]
 python = "^3.8"
 asyncpg = "^0.21.0"
 psycopg2 = "^2.8.6"
+alembic = "^1.4.2"
+pre-commit = "^2.7.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

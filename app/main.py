@@ -10,19 +10,12 @@ from datetime import timedelta, datetime
 from jose import JWTError, jwt
 from _sqlite3 import IntegrityError
 
-import models
-from schemas import UserCreate,User
-from database import engine, SessionLocal
-import crud
+from .schemas import User, UserCreate
 
-
-
-#databases database
+# databases database
 from db import engine as eg
-from db import database as adb,metadata
-from db_models import league,users
-
-
+from db import database as adb, metadata
+from db_models import league, users
 
 
 SECRET_KEY = "8ee7b057761c29f8ca0a336f850aa73abf9eeb81c6a5b015c893af74d7e6a948"
@@ -30,25 +23,12 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
-models.Base.metadata.create_all(bind=engine)
-metadata.create_all(eg)
-
 app = FastAPI()
 
-# Dependency
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
-
-'''Code for oauth implementation'''
+"""Code for oauth implementation"""
 
 
 class Token(BaseModel):
@@ -73,19 +53,19 @@ def get_password_hash(password):
 
 async def get_user(username: str):
     query = users.select()
-    user_list=await adb.fetch_all(query)
+    user_list = await adb.fetch_all(query)
     for user in user_list:
         if user.username == username:
             return user
     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 
-'''authenticating user'''
+"""authenticating user"""
 # TODO:change the fake db implementation to real db
 
 
 async def authenticate_user(username: str, password: str):
-    user =await get_user(username)
+    user = await get_user(username)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -93,21 +73,21 @@ async def authenticate_user(username: str, password: str):
     return user
 
 
-'''code to create the access token'''
+"""code to create the access token"""
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now()+expires_delta
+        expire = datetime.now() + expires_delta
     else:
-        expire = datetime.utcnow()+timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
-'''getting the current user details'''
+"""getting the current user details"""
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -130,7 +110,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return user
 
-'''Checking users if they are active or not'''
+
+"""Checking users if they are active or not"""
 
 
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
@@ -138,7 +119,8 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-'''Oauth token url.All the logic behind authentication goes here'''
+
+"""Oauth token url.All the logic behind authentication goes here"""
 
 
 @app.post("/token")
@@ -152,10 +134,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        {"sub": user.username}, expires_delta=access_token_expires)
+        {"sub": user.username}, expires_delta=access_token_expires
+    )
 
     return {"access_token": access_token, "token_type": "bearer"}
-
 
 
 @app.on_event("startup")
@@ -169,7 +151,9 @@ async def shutdown():
     await adb.disconnect()
     print("disconnected from the db")
 
-'''All the routes are stored here'''
+
+"""All the routes are stored here"""
+
 
 class NoteIn(BaseModel):
     text: str
@@ -180,6 +164,7 @@ class Note(BaseModel):
     id: int
     text: str
     completed: bool
+
 
 # @app.get("/notes/", response_model=List[Note])
 # async def read_notes():
@@ -194,20 +179,29 @@ class Note(BaseModel):
 #     return {**note.dict(), "id": last_record_id}
 
 
-@app.get("/users", response_model=List[User])
-async def read_items(db=Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    return crud.get_all_users(db)
+# @app.get("/users", response_model=List[User])
+# async def read_items(), current_user: User = Depends(get_current_active_user)):
+#     return crud.get_all_users(db)
 
 
 @app.post("/register", response_model=User)
-async def create_user(user:UserCreate, db=Depends(get_db)):
+async def create_user(user: UserCreate):
     try:
         user.password = get_password_hash(user.password)
-        query=users.insert().values(username=user.username,email=user.email,hashed_password=user.password,full_name=user.full_name,disabled=user.disabled,role=user.role)
-        last_record_id=await adb.execute(query)
-        return {**user.dict(),"id":last_record_id}
+        query = users.insert().values(
+            username=user.username,
+            email=user.email,
+            hashed_password=user.password,
+            full_name=user.full_name,
+            disabled=user.disabled,
+            role=user.role,
+        )
+        last_record_id = await adb.execute(query)
+        return {**user.dict(), "id": last_record_id}
     except IntegrityError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
 
 
 # @app.get("/leagues", response_model=List[schemas.League])

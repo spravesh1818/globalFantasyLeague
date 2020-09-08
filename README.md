@@ -5,7 +5,7 @@ This is a experimental fantasy league.
 ## Installation
 
 Clone this repository and install all the requirements.Preferably in a virtual environment.
-After that run the server using command 
+After that run the server using command
 
 ```bash
 uvicorn main:app --reload(optional)

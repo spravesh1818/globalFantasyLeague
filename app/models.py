@@ -19,7 +19,7 @@ class Team(Base):
     league_id = Column(Integer, ForeignKey("leagues.id"))
     league = relationship("League", back_populates="teams")
     players = relationship("Player", back_populates="team")
-    user_id = Column(Integer, ForeignKey('users.id'))
+    user_id = Column(Integer, ForeignKey("users.id"))
 
 
 class User(Base):
