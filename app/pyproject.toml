@@ -6,6 +6,8 @@ authors = ["Pravesh Chapgain<spravesh1818@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+asyncpg = "^0.21.0"
+psycopg2 = "^2.8.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
