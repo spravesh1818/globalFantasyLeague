@@ -10,9 +10,6 @@ class Team(BaseModel):
     stadium: Optional[str] = None
     owner: Optional[str] = None
 
-    class Config:
-        orm_mode = True
-
 
 class TeamCreate(Team):
     players: List[Player] = []

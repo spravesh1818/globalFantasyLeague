@@ -1,5 +1,6 @@
 from datetime import timedelta
 from typing import List
+from loguru import logger
 
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
@@ -14,8 +15,8 @@ from authenticationUtils import (
 )
 from fastapi import Depends, HTTPException
 from fastapi.routing import APIRouter
-from .users_schema import User, UserCreate
-from .users_model import users
+from .schema import User, UserCreate
+from .models import users
 from db import database
 
 
@@ -26,6 +27,7 @@ router = APIRouter()
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await authenticate_user(form_data.username, form_data.password)
     if not user:
+        logger.error("User authentication failed")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -47,7 +49,36 @@ async def read_items(current_user: User = Depends(get_current_active_user)):
     for row in rows:
         output.append(User(**row))
 
+    logger.info("All users fetched")
     return output
+
+
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: int, current_user: User = Depends(get_current_active_user)
+):
+    if current_user.role != "admin":
+        logger.error("User Authorization failed")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="UNAUTHORIZED"
+        )
+
+    query = users.delete().where(users.c.id == user_id)
+    response = await database.execute(query)
+    logger.info("Response from the server {}".format(response))
+    return {"msg": "User deleted successfully"}
+
+
+@router.put("/users/{user_id}")
+def edit_user(
+    user_id: int, userData: User, current_user: User = Depends(get_current_active_user)
+):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="UNAUTHORIZED"
+        )
+
+    # TODO:edit the row
 
 
 @router.post("/register", response_model=User)
@@ -63,8 +94,10 @@ async def create_user(user: UserCreate):
             role=user.role,
         )
         last_record_id = await database.execute(query)
+        logger.info("User {} registered successfully".format(user.username))
         return {**user.dict(), "id": last_record_id}
     except IntegrityError as e:
+        logger.info("User with same username or email already exists")
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
         )

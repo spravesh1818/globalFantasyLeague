@@ -7,8 +7,8 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from db import database as adb
-from usermanagement.users_model import users
-from usermanagement.users_schema import UserCreate, User
+from usermanagement.models import users
+from usermanagement.schema import UserCreate, User
 from starlette import status
 
 
@@ -39,7 +39,7 @@ def get_password_hash(password) -> str:
     return pwd_context.hash(password)
 
 
-async def get_user(username: str) -> UserCreate:
+async def get_user(username: Optional[str]) -> UserCreate:
     query = users.select()
     user_list = await adb.fetch_all(query)
     for user in user_list:

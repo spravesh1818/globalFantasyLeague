@@ -1,5 +1,4 @@
 import sqlalchemy
-
 from db import metadata
 
 fantasy_team = sqlalchemy.Table(

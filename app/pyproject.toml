@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "Global Fantasy League"
+name = "global-fantasy-league"
 version = "0.1.0"
 description = ""
 authors = ["Pravesh Chapgain<spravesh1818@gmail.com>"]
@@ -10,6 +10,7 @@ asyncpg = "^0.21.0"
 psycopg2 = "^2.8.6"
 alembic = "^1.4.2"
 pre-commit = "^2.7.1"
+loguru = "^0.5.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

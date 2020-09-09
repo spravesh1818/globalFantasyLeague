@@ -3,13 +3,13 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import timedelta, datetime
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from league import league_routes
-from usermanagement import users_routes
+from league import routes as league_routes
+from usermanagement import routes as users_routes
+from loguru import logger
 
 # databases database
 from db import database as adb
 
-from usermanagement.users_model import users
 
 from authenticationUtils import authenticate_user, create_access_token
 
@@ -32,11 +32,13 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup():
     await adb.connect()
+    logger.info("Connected to database")
 
 
 @app.on_event("shutdown")
 async def shutdown():
     await adb.disconnect()
+    logger.info("Disconnected from the database")
 
 
 # @app.get("/notes/", response_model=List[Note])
