@@ -8,9 +8,8 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 from db import database as adb
 from usermanagement.users_model import users
-from schemas import UserCreate
+from usermanagement.users_schema import UserCreate, User
 from starlette import status
-from schemas import User
 
 
 SECRET_KEY = "8ee7b057761c29f8ca0a336f850aa73abf9eeb81c6a5b015c893af74d7e6a948"

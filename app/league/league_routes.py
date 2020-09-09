@@ -3,7 +3,7 @@ from typing import List
 from fastapi import Depends
 from fastapi.routing import APIRouter
 from authenticationUtils import get_current_active_user
-from schemas import User
+from usermanagement.users_schema import User
 from sqlalchemy import select
 from db import database
 
