@@ -7,7 +7,7 @@ from jose import jwt, JWTError
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from db import database as adb
-from db_models import users
+from usermanagement.users_model import users
 from schemas import UserCreate
 from starlette import status
 from schemas import User

@@ -47,15 +47,9 @@ class User(BaseModel):
     disabled: Optional[bool] = None
     role: Role
 
-    class Config:
-        orm_mode = True
-
 
 class UserCreate(User):
     password: str
-
-    class Config:
-        orm_mode = True
 
 
 class League(BaseModel):
