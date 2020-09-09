@@ -1,6 +1,3 @@
-from typing import List
-import sqlalchemy
-from sqlalchemy.orm import Session, scoped_session
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
@@ -9,24 +6,33 @@ from passlib.context import CryptContext
 from datetime import timedelta, datetime
 from jose import JWTError, jwt
 from _sqlite3 import IntegrityError
-
-from .schemas import User, UserCreate
+from fastapi.middleware.cors import CORSMiddleware
+from typing import List
+import uvicorn
+from schemas import User, UserCreate, League
 
 # databases database
-from db import engine as eg
-from db import database as adb, metadata
-from db_models import league, users
+from db import database as adb
+from db_models import users
 
 
 SECRET_KEY = "8ee7b057761c29f8ca0a336f850aa73abf9eeb81c6a5b015c893af74d7e6a948"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 """Code for oauth implementation"""
 
@@ -55,20 +61,19 @@ async def get_user(username: str):
     query = users.select()
     user_list = await adb.fetch_all(query)
     for user in user_list:
-        if user.username == username:
-            return user
+        if user["username"] == username:
+            return UserCreate(**user)
     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 
 """authenticating user"""
-# TODO:change the fake db implementation to real db
 
 
 async def authenticate_user(username: str, password: str):
     user = await get_user(username)
     if not user:
         return False
-    if not verify_password(password, user.hashed_password):
+    if not verify_password(password, user.password):
         return False
     return user
 
@@ -105,7 +110,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = get_user(username=token_data.username)
+    user = await get_user(username=token_data.username)
+    print(user)
     if not user:
         raise credentials_exception
     return user
@@ -143,13 +149,11 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 @app.on_event("startup")
 async def startup():
     await adb.connect()
-    print("connected to the db")
 
 
 @app.on_event("shutdown")
 async def shutdown():
     await adb.disconnect()
-    print("disconnected from the db")
 
 
 """All the routes are stored here"""
@@ -179,9 +183,9 @@ class Note(BaseModel):
 #     return {**note.dict(), "id": last_record_id}
 
 
-# @app.get("/users", response_model=List[User])
-# async def read_items(), current_user: User = Depends(get_current_active_user)):
-#     return crud.get_all_users(db)
+@app.get("/users", response_model=List[User])
+async def read_items(current_user: User = Depends(get_current_active_user)):
+    return {"msg": "Hello world"}
 
 
 @app.post("/register", response_model=User)
@@ -191,7 +195,7 @@ async def create_user(user: UserCreate):
         query = users.insert().values(
             username=user.username,
             email=user.email,
-            hashed_password=user.password,
+            password=user.password,
             full_name=user.full_name,
             disabled=user.disabled,
             role=user.role,
@@ -204,12 +208,15 @@ async def create_user(user: UserCreate):
         )
 
 
-# @app.get("/leagues", response_model=List[schemas.League])
-# def read_leagues(skip: int = 0, limit: int = 0, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
-#     leagues = crud.get_leagues(db, skip=skip, limit=limit)
-#     print(leagues)
-#     return leagues
-#
+@app.get("/leagues", response_model=List[League])
+def read_leagues(
+    skip: int = 0, limit: int = 0, current_user: User = Depends(get_current_active_user)
+):
+    leagues = crud.get_leagues(db, skip=skip, limit=limit)
+    print(leagues)
+    return leagues
+
+
 #
 # @app.post("/leagues", response_model=schemas.LeagueCreate)
 # def write_leagues(league: schemas.LeagueCreate, db=Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
@@ -250,3 +257,7 @@ async def create_user(user: UserCreate):
 # @app.get("/teams/{team_id}", response_model=schemas.Team)
 # def read_team(team_id: int, db: Session = Depends((get_db)), current_user: schemas.User = Depends(get_current_active_user)):
 #     return crud.get_team(db, team_id)
+
+
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", port=8000, reload=True, access_log=False)

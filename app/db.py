@@ -10,5 +10,3 @@ metadata = sqlalchemy.MetaData()
 
 
 engine = sqlalchemy.create_engine(DATABASE_URL)
-
-print(engine.table_names())

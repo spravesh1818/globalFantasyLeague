@@ -5,4 +5,4 @@ pyvenv.cfg
 .DS_Store
 /__pycache__
 /app/app/sql_app.db
-/app/app/__pycache__
+/app/__pycache__/
