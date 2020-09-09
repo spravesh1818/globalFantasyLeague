@@ -60,11 +60,7 @@ class UserCreate(User):
 
 class League(BaseModel):
     name: str
-    country: str
     division: str
-
-    class Config:
-        orm_mode = True
 
 
 class LeagueCreate(League):

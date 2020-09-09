@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "app"
+name = "Global Fantasy League"
 version = "0.1.0"
 description = ""
 authors = ["Pravesh Chapgain<spravesh1818@gmail.com>"]
@@ -13,6 +13,7 @@ pre-commit = "^2.7.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
+mypy = "^0.782"
 
 [build-system]
 requires = ["poetry>=0.12"]

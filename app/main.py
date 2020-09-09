@@ -9,12 +9,16 @@ from _sqlite3 import IntegrityError
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import uvicorn
+from sqlalchemy.sql import select
 from schemas import User, UserCreate, League
+from sqlalchemy import any_
+from league import league_routes
+from league import league_models
 
 # databases database
 from db import database as adb
-from db_models import users
 
+from db_models import users
 
 SECRET_KEY = "8ee7b057761c29f8ca0a336f850aa73abf9eeb81c6a5b015c893af74d7e6a948"
 ALGORITHM = "HS256"
@@ -22,7 +26,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 app = FastAPI()
-
 
 origins = ["*"]
 app.add_middleware(
@@ -32,7 +35,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 """Code for oauth implementation"""
 
@@ -49,15 +51,15 @@ class TokenData(BaseModel):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def verify_password(plain_password, hashed_password):
+def verify_password(plain_password, hashed_password) -> str:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def get_password_hash(password):
+def get_password_hash(password) -> str:
     return pwd_context.hash(password)
 
 
-async def get_user(username: str):
+async def get_user(username: str) -> UserCreate:
     query = users.select()
     user_list = await adb.fetch_all(query)
     for user in user_list:
@@ -81,7 +83,7 @@ async def authenticate_user(username: str, password: str):
 """code to create the access token"""
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now() + expires_delta
@@ -95,7 +97,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 """getting the current user details"""
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -111,7 +113,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     except JWTError:
         raise credentials_exception
     user = await get_user(username=token_data.username)
-    print(user)
     if not user:
         raise credentials_exception
     return user
@@ -120,7 +121,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 """Checking users if they are active or not"""
 
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)):
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
     if current_user.disabled:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -208,26 +211,6 @@ async def create_user(user: UserCreate):
         )
 
 
-@app.get("/leagues", response_model=List[League])
-def read_leagues(
-    skip: int = 0, limit: int = 0, current_user: User = Depends(get_current_active_user)
-):
-    leagues = crud.get_leagues(db, skip=skip, limit=limit)
-    print(leagues)
-    return leagues
-
-
-#
-# @app.post("/leagues", response_model=schemas.LeagueCreate)
-# def write_leagues(league: schemas.LeagueCreate, db=Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
-#     return crud.create_league(db, league)
-#
-#
-# @app.get("/leagues/{league_id}", response_model=schemas.LeagueCreate)
-# def read_league(league_id: int, db=Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
-#     return crud.get_league(db, league_id)
-#
-#
 # @app.post("/players", response_model=schemas.Player)
 # def write_player_info(player: schemas.Player, db=Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
 #     return crud.create_player(db, player)
@@ -257,6 +240,8 @@ def read_leagues(
 # @app.get("/teams/{team_id}", response_model=schemas.Team)
 # def read_team(team_id: int, db: Session = Depends((get_db)), current_user: schemas.User = Depends(get_current_active_user)):
 #     return crud.get_team(db, team_id)
+
+app.include_router(league_routes.router, tags=["League"])
 
 
 if __name__ == "__main__":

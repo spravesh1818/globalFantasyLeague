@@ -48,12 +48,3 @@ team = sqlalchemy.Table(
     sqlalchemy.Column("stadium", sqlalchemy.String, unique=True),
     sqlalchemy.Column("league_id", sqlalchemy.ForeignKey("league.id")),
 )
-
-league = sqlalchemy.Table(
-    "league",
-    metadata,
-    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("name", sqlalchemy.String),
-    sqlalchemy.Column("division", sqlalchemy.String)
-    # TODO:Add one to many relationship to team
-)
